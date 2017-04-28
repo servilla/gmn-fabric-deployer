@@ -1,3 +1,3 @@
 # gmn-fabric-deployer
 
-Deploys a DataONE Generic Member Node instance using Pythoin Fabric.
+Deploys a DataONE Generic Member Node instance using Python Fabric.

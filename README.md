@@ -22,20 +22,23 @@ specific dependencies; Mac OS or Windows may be different).
 Fabric is a Python-based tool for interacting with both local and remote 
 servers, primarily through the SSH protocol. This is not, however, a tutorial
  on Fabric - for that, go to the Fabric documentation: docs.fabfile.org.
-  
-Ubuntu 16.04 dependencies:
 
- - virtualenv
+There are a number of dependencies that should/must be resolved before 
+installing Fabric. For Ubuntu 16.04, these dependencies are:
+
+ - virtualenv (optional, but highly recommended)
  - build-essential
  - python-dev
  - libssl-dev
  
-(install using `apt install virtualenv build-essential python-dev libssl-dev`)
- 
+To install these dependencies on Ubuntu 16.04: 
+```
+apt install virtualenv build-essential python-dev libssl-dev
+``` 
 To install Fabric:
  
 ```
-cd <work_directory>
+cd <working_directory>
 virtualenv --python=python2.7 venv
 source ./venv/bin/activate
 pip install fabric
@@ -65,21 +68,19 @@ you prefer to exert more control over deploying GMN, you may execute each of
 these commands individually in the order listed.
 
 The steps include:
-- Add the GMN user (add_gmn_user)
-- Add a sudoers configuration for the GMN user (add_gmn_sudo)
-- Add Ubuntu requirements (add_dist_tool_chain)
-- Add Python 'pip' and update (add_pip)
-- Add the GMN package (and dependencies) (add_gmn_package)
-- Add Apache2 and configuration (add_apache2)
-- Add PostgreSQL (add_postgres)
-- Add the GMN crontab (add_cron)
+- `add_gmn_user` - Add the GMN user
+- `add_gmn_sudo` - Add a sudoers configuration for the GMN user
+- `add_dist_tool_chain` - Add Ubuntu requirements
+- `add_pip` - Add Python 'pip' and update
+- `add_gmn_package` - Add the GMN package (and dependencies)
+- `add_apache2` - Add Apache2 and configuration
+- `add_postgres` - Add PostgreSQL
+- `add_cron` - Add the GMN crontab entries
 - Optional steps:
-    - Add a local Certificate Authority (add_local_ca)
-    - Create local self-signed client certificate (add_client_cert)
-    - Add the local CA to the configuration (add_trust_local_ca)
-    - Add the self-signed client certificate to the configuration 
-    (install_non_trusted_client)
-    - Add the self-signed "snakeoil" server certificate to the configuration 
-    (install_non_trusted_server)
-- Perform the basic GMN configuration (do_basic_config)
-- Perform the final GMN configuration (do_file_config)
+    - `add_local_ca` - Add a local Certificate Authority
+    - `add_client_cert` - Create local self-signed client certificate
+    - `add_trust_local_ca` - Add the local CA to the configuration
+    - `install_non_trusted_client` Add the self-signed client certificate to the configuration
+    - `install_non_trusted_server` - Add the self-signed "snake oil" server certificate to the configuration
+- `do_basic_config` - Perform the basic GMN configuration
+- `do_file_config` - Perform the final GMN configuration

@@ -21,7 +21,7 @@ specific dependencies; Mac OS or Windows may be different).
 
 Fabric is a Python-based tool for interacting with both local and remote 
 servers, primarily through the SSH protocol. This is not, however, a tutorial
- on Fabric - for that, go to the Fabric documentation: docs.fabfile.org.
+ on Fabric - for that, go to the Fabric documentation: http://docs.fabfile.org.
 
 There are a number of dependencies that should/must be resolved before 
 installing Fabric. For Ubuntu 16.04, these dependencies are:

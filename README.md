@@ -83,4 +83,4 @@ The steps include:
     - `install_non_trusted_client` Add the self-signed client certificate to the configuration
     - `install_non_trusted_server` - Add the self-signed "snake oil" server certificate to the configuration
 - `do_basic_config` - Perform the basic GMN configuration
-- `do_file_config` - Perform the final GMN configuration
+- `do_final_config` - Perform the final GMN configuration

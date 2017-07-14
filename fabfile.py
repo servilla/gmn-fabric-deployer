@@ -30,9 +30,9 @@ use_local_CA = True
 
 def do_patch():
     puts('Doing Ubuntu system patch...')
-    sudo('apt-get update', quiet=quiet)
-    sudo('apt-get --yes dist-upgrade', quiet=quiet)
-    sudo('apt-get --yes autoremove', quiet=quiet)
+    sudo('apt update --yes', quiet=quiet)
+    sudo('apt dist-upgrade --yes', quiet=quiet)
+    sudo('apt autoremove --yes', quiet=quiet)
     sudo('shutdown -r now', quiet=quiet)
 
 def add_gmn_user():
@@ -50,32 +50,30 @@ def add_dist_tool_chain():
     tool_chain = 'build-essential python-dev libssl-dev libxml2-dev ' \
                  'libxslt1-dev libffi-dev postgresql-server-dev-9.5 ' \
                  'openssl curl'
-
     sudo('apt install --yes ' + tool_chain, quiet=quiet)
 
 def add_pip():
-    puts('Adding pypi version of pip...')
+    puts('Adding pypi version of pip and virtualenv...')
     sudo('apt install --yes python-pip', quiet=quiet)
-    sudo('pip install --upgrade pip', quiet=quiet)
+    sudo('pip install --upgrade pip virtualenv', quiet=quiet)
     sudo('apt remove --yes python-pip', quiet=quiet)
 
 def add_gmn_package():
     puts('Installing GMN...')
-    sudo('pip install --upgrade virtualenv', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/gmn_venv', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/gmn_object_store', quiet=quiet)
     sudo('chown gmn:www-data /var/local/dataone/gmn_venv', quiet=quiet)
     with settings(sudo_user='gmn'):
         sudo('virtualenv /var/local/dataone/gmn_venv', quiet=quiet)
-        sudo('/var/local/dataone/gmn_venv/bin/pip install --upgrade --no-cache-dir dataone.gmn setuptools==34.3.3')
+        sudo('/var/local/dataone/gmn_venv/bin/pip install --upgrade --no-cache-dir dataone.gmn')
         sudo('sed -i "$ a PATH=/var/local/dataone/gmn_venv/bin/:\$\"PATH\"" /home/gmn/.bashrc', quiet=quiet)
 
 def add_apache2():
     puts('Adding apache2...')
     sudo('apt install --yes apache2 libapache2-mod-wsgi', quiet=quiet)
     sudo('a2enmod --quiet wsgi ssl rewrite', quiet=quiet)
-    sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/deployment/gmn2-ssl.conf /etc/apache2/sites-available/', quiet=quiet)
-    sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/deployment/forward_http_to_https.conf /etc/apache2/conf-available', quiet=quiet)
+    sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/deployment/gmn2-ssl.conf /etc/apache2/sites-available/', quiet=quiet)
+    sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/deployment/forward_http_to_https.conf /etc/apache2/conf-available', quiet=quiet)
     sudo('a2enconf --quiet forward_http_to_https', quiet=quiet)
     sudo('sudo a2ensite --quiet gmn2-ssl', quiet=quiet)
 
@@ -100,7 +98,7 @@ def add_local_ca():
     sudo('mkdir -p /var/local/dataone/certs/local_ca/newcerts', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/certs/local_ca/private', quiet=quiet)
     with cd('/var/local/dataone/certs/local_ca'):
-        sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/deployment/openssl.cnf .', quiet=quiet)
+        sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/deployment/openssl.cnf .', quiet=quiet)
         sudo('touch index.txt', quiet=quiet)
         sudo('openssl req -config ./openssl.cnf -new -newkey rsa:2048 -keyout private/ca_key.pem -out ca_csr.pem', quiet=False)
         sudo('openssl ca -config ./openssl.cnf -create_serial -keyfile private/ca_key.pem -selfsign -extensions v3_ca_has_san -out ca_cert.pem -infiles ca_csr.pem', quiet=False)
@@ -142,9 +140,8 @@ def make_ssl_cert():
 
 def do_basic_config():
     puts('Performing basic configuration...')
-    with cd('/var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn'):
-        sudo('cp settings_site_template.py settings_site.py', quiet=quiet)
-        sudo('sed -i "0,/MySecretKey/s//`sudo openssl rand -hex 32`/" settings_site.py', quiet=quiet)
+    with cd('/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn'):
+        sudo('cp settings_template.py settings.py', quiet=quiet)
 
 def do_final_config():
     puts('Performing final configuration...')
@@ -152,7 +149,7 @@ def do_final_config():
     sudo('chmod -R g+w /var/local/dataone', quiet=quiet)
     puts('Creating gmn2 database...')
     with settings(sudo_user='gmn'):
-        sudo('/var/local/dataone/gmn_venv/bin/python /var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/manage.py migrate --run-syncdb', quiet=quiet)
+        sudo('/var/local/dataone/gmn_venv/bin/python /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/manage.py migrate --run-syncdb', quiet=quiet)
     puts('Changing TZ to UTC...')
     sudo('echo "Etc/UTC" > /etc/timezone', quiet=quiet)
     sudo('rm /etc/localtime', quiet=quiet) # Necessary due to Debian/Ubuntu bug

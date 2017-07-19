@@ -27,7 +27,6 @@ from fabric.utils import puts
 
 quiet = False
 use_local_CA = True
-cert_path = '.'
 
 def do_patch():
     puts('Doing Ubuntu system patch...')
@@ -112,8 +111,8 @@ def add_client_cert():
         sudo('openssl rsa -in private/client_key.pem -out private/client_key_nopassword.pem', quiet=False)
         sudo('openssl rsa -in private/client_key_nopassword.pem -pubout -out client_public_key.pem', quiet=False)
         sudo('openssl ca -config ./openssl.cnf -in client_csr.pem -out client_cert.pem', quiet=False)
-        get('private/client_key_nopassword.pem', cert_path + 'client_key_nopassword.pem', use_sudo=True)
-        get('client_cert.pem', cert_path + 'client_cert.pem', use_sudo=True)
+        get('private/client_key_nopassword.pem', 'client_key_nopassword.pem', use_sudo=True)
+        get('client_cert.pem', 'client_cert.pem', use_sudo=True)
         sudo('rm client_csr.pem', quiet=quiet)
 
 def add_trust_local_ca():
@@ -130,7 +129,7 @@ def install_non_trusted_client():
         sudo('cp client_cert.pem private/client_key_nopassword.pem ../client', quiet=quiet)
 
 def install_non_trusted_server():
-    puts('Installing self-signed server certificated...')
+    puts('Installing self-signed server certificate...')
     sudo('apt install --yes ssl-cert', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/certs/server', quiet=quiet)
     sudo('cp /etc/ssl/certs/ssl-cert-snakeoil.pem /var/local/dataone/certs/server/server_cert.pem', quiet=quiet)

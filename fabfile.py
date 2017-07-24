@@ -7,11 +7,12 @@
 
     eval `ssh-agent`
     ssh-add $HOME/.ssh/<priv_key>
+    fab deploy_gmn -H <host>
 
     or
 
     Fabric script to deploy a DataONE Generic Member Node
-    $ fab <command> -I -i /home/<user>/.ssh/id_rsa -H <host>
+    $ fab deploy_gmn -I -i /home/<user>/.ssh/id_rsa -H <host>
 
 :Author:
     servilla
@@ -48,6 +49,8 @@ def add_gmn_user():
 
 def add_gmn_sudo():
     puts('Adding sudo to user GMN...')
+    local('cp 01_gmn.template 01_gmn')
+    local('sed -i \'s/USER/' + env.user + '/\' 01_gmn')
     put('./01_gmn', '/etc/sudoers.d/01_gmn', use_sudo=True)
     sudo('chown root:root /etc/sudoers.d/01_gmn', quiet=quiet)
     sudo('chmod 644 /etc/sudoers.d/01_gmn', quiet=quiet)

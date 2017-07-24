@@ -1,0 +1,6 @@
+User_Alias GMN = USER
+GMN ALL=NOPASSWD: /bin/su -l gmn
+gmn ALL=NOPASSWD: /usr/sbin/service apache2 status
+gmn ALL=NOPASSWD: /usr/sbin/service apache2 start
+gmn ALL=NOPASSWD: /usr/sbin/service apache2 stop
+gmn ALL=NOPASSWD: /usr/sbin/service apache2 restart

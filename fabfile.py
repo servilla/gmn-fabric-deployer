@@ -28,12 +28,19 @@ from fabric.utils import puts
 quiet = False
 use_local_CA = True
 
+
+def server_reboot():
+    puts('Doing Ubuntu system reboot...')
+    with settings(warn_only=True):
+        reboot(wait=60)
+
 def do_patch():
-    puts('Doing Ubuntu system patch...')
+    puts('Doing Ubuntu system patch and reboot...')
     sudo('apt update --yes', quiet=quiet)
     sudo('apt dist-upgrade --yes', quiet=quiet)
     sudo('apt autoremove --yes', quiet=quiet)
-    sudo('shutdown -r now', quiet=quiet)
+    with settings(warn_only=True):
+        reboot(wait=60)
 
 def add_gmn_user():
     puts('Adding user GMN...')
@@ -162,6 +169,7 @@ def do_final_config():
     sudo('service apache2 restart', quiet=quiet)
 
 def deploy_gmn():
+    do_patch()
     add_gmn_user()
     add_gmn_sudo()
     add_dist_tool_chain()

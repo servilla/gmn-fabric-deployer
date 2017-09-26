@@ -54,7 +54,12 @@ performed on target host(s).
 Installing GMN to a host named "gmn-test", including the use of a local CA 
 and self-signed client certificates:
 ```
-fab deploy_gmn -H gmn-test  
+fab deploy_gmn -H gmn-test
+```
+
+Or for a specific version of GMN:
+```
+fab deploy_gmn:gmn_version=2.0.7rc2 -H gmn-test
 ```
 
 # Detailed deployment sequence

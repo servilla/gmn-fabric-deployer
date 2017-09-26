@@ -16,7 +16,7 @@
 
 :Author:
     servilla
-  
+
 :Created:
     04/24/17
 """
@@ -68,22 +68,30 @@ def add_pip():
     sudo('pip install --upgrade pip virtualenv', quiet=quiet)
     sudo('apt remove --yes python-pip', quiet=quiet)
 
-def add_gmn_package():
+def add_gmn_package(versions):
     puts('Installing GMN...')
     sudo('mkdir -p /var/local/dataone/gmn_venv', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/gmn_object_store', quiet=quiet)
     sudo('chown gmn:www-data /var/local/dataone/gmn_venv', quiet=quiet)
     with settings(sudo_user='gmn'):
         sudo('virtualenv /var/local/dataone/gmn_venv', quiet=quiet)
-        sudo('/var/local/dataone/gmn_venv/bin/pip install --upgrade --no-cache-dir dataone.gmn')
+        if versions is None:
+            sudo('/var/local/dataone/gmn_venv/bin/pip install --upgrade --no-cache-dir dataone.gmn')
+        else:
+            common_version, libclient_version, cli_version, gmn_version = versions
+            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.cli')
+            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.common==' + common_version)
+            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.libclient==' + libclient_version)
+            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.gmn==' + gmn_version)
+            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.common==' + common_version)
         sudo('sed -i "$ a PATH=/var/local/dataone/gmn_venv/bin/:\$\"PATH\"" /home/gmn/.bashrc', quiet=quiet)
 
-def add_apache2():
+def add_apache2(gmn_path):
     puts('Adding apache2...')
     sudo('apt install --yes apache2 libapache2-mod-wsgi', quiet=quiet)
     sudo('a2enmod --quiet wsgi ssl rewrite', quiet=quiet)
-    sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/deployment/gmn2-ssl.conf /etc/apache2/sites-available/', quiet=quiet)
-    sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/deployment/forward_http_to_https.conf /etc/apache2/conf-available', quiet=quiet)
+    sudo('cp ' + gmn_path + 'deployment/gmn2-ssl.conf /etc/apache2/sites-available/', quiet=quiet)
+    sudo('cp ' + gmn_path + 'deployment/forward_http_to_https.conf /etc/apache2/conf-available', quiet=quiet)
     sudo('a2enconf --quiet forward_http_to_https', quiet=quiet)
     sudo('sudo a2ensite --quiet gmn2-ssl', quiet=quiet)
 
@@ -102,13 +110,13 @@ def add_cron():
     sudo('chown gmn:crontab /var/spool/cron/crontabs/gmn', quiet=quiet)
     sudo('chmod 600 /var/spool/cron/crontabs/gmn', quiet=quiet)
 
-def add_local_ca():
+def add_local_ca(gmn_path):
     puts('Making local CA...')
     sudo('mkdir -p /var/local/dataone/certs/local_ca/certs', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/certs/local_ca/newcerts', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/certs/local_ca/private', quiet=quiet)
     with cd('/var/local/dataone/certs/local_ca'):
-        sudo('cp /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/deployment/openssl.cnf .', quiet=quiet)
+        sudo('cp ' + gmn_path + 'deployment/openssl.cnf .', quiet=quiet)
         sudo('touch index.txt', quiet=quiet)
         sudo('openssl req -config ./openssl.cnf -new -newkey rsa:2048 -keyout private/ca_key.pem -out ca_csr.pem', quiet=False)
         sudo('openssl ca -config ./openssl.cnf -create_serial -keyfile private/ca_key.pem -selfsign -extensions v3_ca_has_san -out ca_cert.pem -infiles ca_csr.pem', quiet=False)
@@ -150,18 +158,21 @@ def make_ssl_cert():
     # Then, copy the new versions to the GMN standard locations as described above.
     sudo('make-ssl-cert generate-default-snakeoil --force-overwrite', quiet=quiet)
 
-def do_basic_config():
+def do_basic_config(gmn_path):
     puts('Performing basic configuration...')
-    with cd('/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn'):
-        sudo('cp settings_template.py settings.py', quiet=quiet)
+    with cd(gmn_path):
+        if '/gmn/' in gmn_path:
+            sudo('cp settings_site_template.py settings_site.py', quiet=quiet)
+        else:
+            sudo('cp settings_template.py settings.py', quiet=quiet)
 
-def do_final_config():
+def do_final_config(gmn_path):
     puts('Performing final configuration...')
     sudo('chown -R gmn:www-data /var/local/dataone/', quiet=quiet)
     sudo('chmod -R g+w /var/local/dataone', quiet=quiet)
     puts('Creating gmn2 database...')
     with settings(sudo_user='gmn'):
-        sudo('/var/local/dataone/gmn_venv/bin/python /var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/manage.py migrate --run-syncdb', quiet=quiet)
+        sudo('/var/local/dataone/gmn_venv/bin/python ' + gmn_path + '/manage.py migrate --run-syncdb', quiet=quiet)
     puts('Changing TZ to UTC...')
     sudo('echo "Etc/UTC" > /etc/timezone', quiet=quiet)
     sudo('rm /etc/localtime', quiet=quiet) # Necessary due to Debian/Ubuntu bug
@@ -171,24 +182,37 @@ def do_final_config():
     puts('Restarting apache2...')
     sudo('service apache2 restart', quiet=quiet)
 
-def deploy_gmn():
+def deploy_gmn(gmn_version=None):
+    
+    major, minor, debug = gmn_version.split('.')
+    versions = None
+
+    if gmn_version is None:
+        gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
+    elif int(minor) < 3:
+        gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/'
+        versions = ['2.1.0rc2', '2.1.0rc2', '1.2.5', gmn_version]
+    else:
+        gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
+        versions = [gmn_version, gmn_version, gmn_version, gmn_version]
+    
     do_patch()
     add_gmn_user()
     add_gmn_sudo()
     add_dist_tool_chain()
     add_pip()
-    add_gmn_package()
-    add_apache2()
+    add_gmn_package(versions=versions)
+    add_apache2(gmn_path=gmn_path)
     add_postgres()
     add_cron()
     if use_local_CA:
-        add_local_ca()
+        add_local_ca(gmn_path=gmn_path)
         add_client_cert()
         add_trust_local_ca()
         install_non_trusted_client()
         install_non_trusted_server()
-    do_basic_config()
-    do_final_config()
+    do_basic_config(gmn_path=gmn_path)
+    do_final_config(gmn_path=gmn_path)
 
 def main():
     return 0

@@ -80,9 +80,9 @@ def add_gmn_package(versions):
         else:
             common_version, libclient_version, cli_version, gmn_version = versions
             sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.cli')
-            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.common==' + common_version)
             sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.libclient==' + libclient_version)
             sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.gmn==' + gmn_version)
+            # Moving the install of dataone.common to last is a hack to deal with the dataone.cli dependency issues for common
             sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.common==' + common_version)
         sudo('sed -i "$ a PATH=/var/local/dataone/gmn_venv/bin/:\$\"PATH\"" /home/gmn/.bashrc', quiet=quiet)
 

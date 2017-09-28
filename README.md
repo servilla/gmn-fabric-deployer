@@ -62,6 +62,11 @@ Or for a specific version of GMN:
 fab deploy_gmn:gmn_version=2.0.7rc2 -H gmn-test
 ```
 
+And for using a local self-signed CA:
+```
+fab deploy_gmn:use_local_ca=True
+```
+
 # Detailed deployment sequence
 
 There are total of 15 steps involved in the full deployment of GMN, which are

@@ -182,7 +182,7 @@ def do_final_config(gmn_path):
     puts('Restarting apache2...')
     sudo('service apache2 restart', quiet=quiet)
 
-def deploy_gmn(gmn_version=None):
+def deploy_gmn(gmn_version=None, use_local_ca=False):
     
     major, minor, debug = gmn_version.split('.')
     versions = None
@@ -205,7 +205,7 @@ def deploy_gmn(gmn_version=None):
     add_apache2(gmn_path=gmn_path)
     add_postgres()
     add_cron()
-    if use_local_CA:
+    if use_local_ca:
         add_local_ca(gmn_path=gmn_path)
         add_client_cert()
         add_trust_local_ca()

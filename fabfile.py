@@ -243,7 +243,7 @@ def deploy_gmn(
     else:
         install_trusted_client(cert=client_cert, key=client_key)
         install_dataone_chainfile(env='test')
-        install_non_trusted_server()
+        install_non_trusted_server() # Needed for Apache start
 
     do_basic_config(gmn_path=gmn_path)
     do_final_config(gmn_path=gmn_path)

@@ -27,8 +27,6 @@ from fabric.context_managers import *
 from fabric.utils import puts
 
 quiet = False
-use_local_CA = True
-
 
 def server_reboot():
     puts('Doing Ubuntu system reboot...')
@@ -158,6 +156,24 @@ def make_ssl_cert():
     # Then, copy the new versions to the GMN standard locations as described above.
     sudo('make-ssl-cert generate-default-snakeoil --force-overwrite', quiet=quiet)
 
+def install_trusted_client(cert=None, key=None):
+    puts('Installing trusted client certificate...')
+    put(cert, '/tmp/client_cert.pem')
+    put(key, '/tmp/client_key_nopassword.pem')
+    sudo('mkdir -p /var/local/dataone/certs/client')
+    with cd('/var/local/dataone/certs/client'):
+        sudo('mv /tmp/client_cert.pem .')
+        sudo('mv /tmp/client_key_nopassword.pem .')
+
+def install_dataone_chainfile(env='test'):
+    puts('Installing DataONE chainfile...')
+    sudo('mkdir -p /var/local/dataone/certs/ca')
+    with cd('/var/local/dataone/certs/ca'):
+        chain = 'https://repository.dataone.org/software/tools/trunk/ca/DataONETestCAChain.crt'
+        sudo('wget ' + chain)
+        sudo('c_rehash .')
+
+
 def do_basic_config(gmn_path):
     puts('Performing basic configuration...')
     with cd(gmn_path):
@@ -182,21 +198,33 @@ def do_final_config(gmn_path):
     puts('Restarting apache2...')
     sudo('service apache2 restart', quiet=quiet)
 
-def deploy_gmn(gmn_version=None, use_local_ca=False):
-    
-    major, minor, debug = gmn_version.split('.')
+def deploy_gmn(
+    gmn_version=None,
+    use_local_ca=True,
+    do_os_patch=False,
+    client_cert=None,
+    client_key=None
+    ):
+
     versions = None
 
     if gmn_version is None:
         gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
-    elif int(minor) < 3:
-        gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/'
-        versions = ['2.1.0rc2', '2.1.0rc2', '1.2.5', gmn_version]
     else:
-        gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
-        versions = [gmn_version, gmn_version, gmn_version, gmn_version]
-    
-    do_patch()
+        major, minor, debug = gmn_version.split('.')
+        if int(minor) < 3:
+            gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/'
+            versions = ['2.1.0rc2', '2.1.0rc2', '1.2.5', gmn_version]
+        else:
+            gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
+            versions = [gmn_version, gmn_version, gmn_version, gmn_version]
+
+    if do_os_patch:
+        do_patch()
+
+    if client_cert is not None and client_key is not None:
+        use_local_ca = False
+
     add_gmn_user()
     add_gmn_sudo()
     add_dist_tool_chain()
@@ -205,12 +233,18 @@ def deploy_gmn(gmn_version=None, use_local_ca=False):
     add_apache2(gmn_path=gmn_path)
     add_postgres()
     add_cron()
+
     if use_local_ca:
         add_local_ca(gmn_path=gmn_path)
         add_client_cert()
         add_trust_local_ca()
         install_non_trusted_client()
         install_non_trusted_server()
+    else:
+        install_trusted_client(cert=client_cert, key=client_key)
+        install_dataone_chainfile(env='test')
+        install_non_trusted_server()
+
     do_basic_config(gmn_path=gmn_path)
     do_final_config(gmn_path=gmn_path)
 

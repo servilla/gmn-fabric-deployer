@@ -57,14 +57,9 @@ and self-signed client certificates:
 fab deploy_gmn -H gmn-test
 ```
 
-Or for a specific version of GMN:
+And for adding an existing DataONE member node client certificate:
 ```
-fab deploy_gmn:gmn_version=2.0.7rc2 -H gmn-test
-```
-
-And for using a local self-signed CA:
-```
-fab deploy_gmn:use_local_ca=True
+fab deploy_gmn:client_cert=<path_to_client_cert>,client_key=<path_to_client_key> -H gmn-test
 ```
 
 # Detailed deployment sequence

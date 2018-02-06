@@ -66,22 +66,14 @@ def add_pip():
     sudo('pip install --upgrade pip virtualenv', quiet=quiet)
     sudo('apt remove --yes python-pip', quiet=quiet)
 
-def add_gmn_package(versions):
+def add_gmn_package():
     puts('Installing GMN...')
     sudo('mkdir -p /var/local/dataone/gmn_venv', quiet=quiet)
     sudo('mkdir -p /var/local/dataone/gmn_object_store', quiet=quiet)
     sudo('chown gmn:www-data /var/local/dataone/gmn_venv', quiet=quiet)
     with settings(sudo_user='gmn'):
         sudo('virtualenv /var/local/dataone/gmn_venv', quiet=quiet)
-        if versions is None:
-            sudo('/var/local/dataone/gmn_venv/bin/pip install --upgrade --no-cache-dir dataone.gmn')
-        else:
-            common_version, libclient_version, cli_version, gmn_version = versions
-            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.cli')
-            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.libclient==' + libclient_version)
-            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.gmn==' + gmn_version)
-            # Moving the install of dataone.common to last is a hack to deal with the dataone.cli dependency issues for common
-            sudo('/var/local/dataone/gmn_venv/bin/pip install --no-cache-dir dataone.common==' + common_version)
+        sudo('/var/local/dataone/gmn_venv/bin/pip install --upgrade --no-cache-dir dataone.gmn')
         sudo('sed -i "$ a PATH=/var/local/dataone/gmn_venv/bin/:\$\"PATH\"" /home/gmn/.bashrc', quiet=quiet)
 
 def add_apache2(gmn_path):
@@ -199,7 +191,6 @@ def do_final_config(gmn_path):
     sudo('service apache2 restart', quiet=quiet)
 
 def deploy_gmn(
-    gmn_version=None,
     use_local_ca=True,
     do_os_patch=False,
     client_cert=None,
@@ -208,16 +199,7 @@ def deploy_gmn(
 
     versions = None
 
-    if gmn_version is None:
-        gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
-    else:
-        major, minor, debug = gmn_version.split('.')
-        if int(minor) < 3:
-            gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/gmn/'
-            versions = ['2.1.0rc2', '2.1.0rc2', '1.2.5', gmn_version]
-        else:
-            gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
-            versions = [gmn_version, gmn_version, gmn_version, gmn_version]
+    gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
 
     if do_os_patch:
         do_patch()
@@ -229,7 +211,7 @@ def deploy_gmn(
     add_gmn_sudo()
     add_dist_tool_chain()
     add_pip()
-    add_gmn_package(versions=versions)
+    add_gmn_package()
     add_apache2(gmn_path=gmn_path)
     add_postgres()
     add_cron()

@@ -51,16 +51,46 @@ interact with either a local host or remote host(s). The `fabfile.py` module
 uses both the Fabric API and internal logic to execute commands that will be
 performed on target host(s).
   
-Installing GMN to a host named "gmn-test", including the use of a local CA 
-and self-signed client certificates:
+The default GMN deployment utilizes self-signed certificates for both the
+DataONE member node client and the local SSL server. For example, installing
+GMN to a host named "gmn-test", including the use of a local CA and self-signed
+client certificates:
 ```
 fab deploy_gmn -H gmn-test
 ```
 
-And for adding an existing DataONE member node client certificate:
+Options (type, default value):
+- `do_os_patch`: Patch and reboot target server (boolean, False)
+- `enable_ufw`: Enable UFW firewall with rules (boolean, True)
+- `test_env`: Configure for DataONE test environment (boolean, True)
+- `gmn_venv`: Specify GMN Python virtual environment (string, gmn_venv)
+- `client_cert`: DataONE MN client certificate (string, None)
+- `client_key`: DataONE MN client key (string, None)
+
+
+
+Examples:
+
+Disabling the UFW firewall:
+```
+fab deploy_gmn:enable_ufw=False -H gmn-test
+```
+
+Creating a different GMN python virtual environment:
+```
+fab deploy_gmn:gmn_venv=gmn_venv24 -H gmn-test
+```
+
+Using a DataONE issued member node client certificate:
 ```
 fab deploy_gmn:client_cert=<path_to_client_cert>,client_key=<path_to_client_key> -H gmn-test
 ```
+
+To install a new GMN virtual environment (e.g., `gmn_venv24`) next to an existing GMN deployment:
+```markdown
+fab add_gmn_package:d1_path=<d1_path>,gmn_venv=gmn_venv24,gmn_path=<gmn_path> -H gmn-test
+```
+
 
 # Detailed deployment sequence
 
@@ -87,5 +117,6 @@ The steps include:
     - `add_trust_local_ca` - Add the local CA to the configuration
     - `install_non_trusted_client` Add the self-signed client certificate to the configuration
     - `install_non_trusted_server` - Add the self-signed "snake oil" server certificate to the configuration
-- `do_basic_config` - Perform the basic GMN configuration
+    - `install_trusted_client` - Add a DataONE issued member node certificate
+    - `install_dataone_chainfile` - Add the DataONE CA chainfile
 - `do_final_config` - Perform the final GMN configuration

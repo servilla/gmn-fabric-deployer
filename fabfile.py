@@ -165,14 +165,10 @@ def install_dataone_chainfile(env='test'):
         sudo('wget ' + chain)
         sudo('c_rehash .')
 
-
 def do_basic_config(gmn_path):
     puts('Performing basic configuration...')
     with cd(gmn_path):
-        if '/gmn/' in gmn_path:
-            sudo('cp settings_site_template.py settings_site.py', quiet=quiet)
-        else:
-            sudo('cp settings_template.py settings.py', quiet=quiet)
+        sudo('cp settings_template.py settings.py', quiet=quiet)
 
 def do_final_config(gmn_path):
     puts('Performing final configuration...')
@@ -186,7 +182,13 @@ def do_final_config(gmn_path):
     sudo('rm /etc/localtime', quiet=quiet) # Necessary due to Debian/Ubuntu bug
     sudo('dpkg-reconfigure -f noninteractive tzdata', quiet=quiet)
     puts('Openning HTTPS through UFW...')
-    sudo('ufw allow 443', quiet=quiet)
+    sudo('ufw allow https', quiet=quiet)
+    puts('Openning HTTP through UFW...')
+    sudo('ufw allow http', quiet=quiet)
+    puts('Openning SSH through UFW...')
+    sudo('ufw allow ssh', quiet=quiet)
+    puts('Starting UFW...')
+    sudo('ufw enable', quiet=False)
     puts('Restarting apache2...')
     sudo('service apache2 restart', quiet=quiet)
 
@@ -196,8 +198,6 @@ def deploy_gmn(
     client_cert=None,
     client_key=None
     ):
-
-    versions = None
 
     gmn_path = '/var/local/dataone/gmn_venv/lib/python2.7/site-packages/d1_gmn/'
 
